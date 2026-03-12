@@ -1,10 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine
+from app.models import CustomBuild, Hero, Match, MatchParticipant, SavedReport  # noqa: F401
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
 
 app = FastAPI(
-    title="Deadlock Meta Intelligence API",
+    title=settings.app_name,
     description="A data-driven API for Deadlock analytics and build management.",
-    version="0.1.0",
+    version=settings.app_version,
+    lifespan=lifespan,
 )
 
 
@@ -16,4 +29,3 @@ def health_check() -> dict[str, str]:
 @app.get("/")
 def root() -> dict[str, str]:
     return {"message": "Deadlock Meta Intelligence API"}
-

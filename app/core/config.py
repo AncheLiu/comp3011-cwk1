@@ -1,0 +1,20 @@
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = "Deadlock Meta Intelligence API"
+    app_version: str = "0.1.0"
+    database_url: str = Field(
+        default="sqlite:///./deadlock_meta.db",
+        description="Database connection string for local development or deployment.",
+    )
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+settings = Settings()
