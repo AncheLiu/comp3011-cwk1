@@ -59,6 +59,16 @@ G:\python\python.exe scripts/import_heroes.py
 
 This script fetches public hero data from the Deadlock asset endpoint and imports it into the local database.
 
+## Import Item Data
+
+Run:
+
+```bash
+G:\python\python.exe scripts/import_items.py
+```
+
+This script fetches public item and ability data from the Deadlock asset endpoint and imports it into the local database.
+
 ## Local Database
 
 By default, the project uses a local SQLite database:
