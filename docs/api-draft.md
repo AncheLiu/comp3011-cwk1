@@ -77,41 +77,33 @@ Example response:
 
 Returns a list of items and abilities currently stored in the local database.
 
-### `GET /matches` `Planned`
+### `GET /matches` `Implemented`
 
-Returns a paginated list of matches.
+Returns a list of imported matches.
 
 Query parameters:
 
 - `hero_id`
 - `region_mode`
-- `game_mode`
 - `date_from`
 - `date_to`
-- `limit`
-- `offset`
 
 Example response:
 
 ```json
-{
-  "items": [
-    {
-      "id": 66396892,
-      "start_time": "2026-03-12T10:30:35Z",
-      "region_mode": "row",
-      "game_mode": "normal",
-      "duration_seconds": 2140,
-      "winning_team": 1
-    }
-  ],
-  "total": 100,
-  "limit": 20,
-  "offset": 0
-}
+[
+  {
+    "id": 66396892,
+    "start_time": "2026-03-12T10:30:35Z",
+    "region_mode": "row",
+    "game_mode": "1",
+    "duration_seconds": 2140,
+    "winning_team": 1
+  }
+]
 ```
 
-### `GET /matches/{match_id}` `Planned`
+### `GET /matches/{match_id}` `Implemented`
 
 Returns detailed match information including participants.
 
@@ -136,18 +128,17 @@ Example response:
 }
 ```
 
-### `GET /community-builds` `Planned`
+### `GET /community-builds` `Implemented`
 
 Returns community builds imported from public sources.
 
 Query parameters:
 
 - `hero_id`
-- `name`
-- `language`
-- `sort_by`
-- `limit`
-- `offset`
+
+### `GET /community-builds/{id}` `Implemented`
+
+Returns a single community build including stored tags and build details.
 
 ## CRUD Endpoints
 
@@ -234,6 +225,7 @@ Currently supported saved report types:
 - `hero_overview`
 - `hero_trend`
 - `hero_matchups`
+- `hero_synergies`
 
 If the saved report does not include a `hero_id`, or if the `report_type` is not currently supported, the endpoint returns `400 Bad Request`.
 
@@ -247,15 +239,12 @@ Deletes a saved report.
 
 ## Analytics Endpoints
 
-### `GET /analytics/heroes/meta` `Planned`
+### `GET /analytics/heroes/meta` `Implemented`
 
-Returns high-level hero meta data.
+Returns high-level hero meta data ranked across all heroes currently stored in the match participant table.
 
 Query parameters:
 
-- `region_mode`
-- `date_from`
-- `date_to`
 - `sort_by`
 - `limit`
 
@@ -296,7 +285,7 @@ Query parameters:
 
 Returns matchup performance against enemy heroes.
 
-### `GET /analytics/heroes/{hero_id}/synergies` `Planned`
+### `GET /analytics/heroes/{hero_id}/synergies` `Implemented`
 
 Returns synergy performance with allied heroes.
 

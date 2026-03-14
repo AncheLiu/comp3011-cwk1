@@ -15,12 +15,16 @@ This project aims to:
 
 - hero reference endpoints
 - item listing endpoint
+- match list and match detail endpoints
+- community build list and detail endpoints
 - custom build CRUD
 - saved report CRUD and result generation
+- hero meta analytics
 - hero overview analytics
 - hero trend analytics
 - hero matchup analytics
-- import scripts for heroes, items and recent matches
+- hero synergy analytics
+- import scripts for heroes, items, recent matches and community builds
 - automated API test coverage
 
 ## Implemented Endpoints
@@ -32,6 +36,10 @@ This project aims to:
 - `GET /heroes`
 - `GET /heroes/{hero_id}`
 - `GET /items`
+- `GET /matches`
+- `GET /matches/{match_id}`
+- `GET /community-builds`
+- `GET /community-builds/{id}`
 
 ### Custom Builds
 
@@ -52,14 +60,16 @@ This project aims to:
 
 ### Analytics
 
+- `GET /analytics/heroes/meta`
 - `GET /analytics/heroes/{hero_id}/overview`
 - `GET /analytics/heroes/{hero_id}/trend`
 - `GET /analytics/heroes/{hero_id}/matchups`
+- `GET /analytics/heroes/{hero_id}/synergies`
 
 ## Next Planned Features
 
-- match listing and match detail endpoints
-- broader analytics endpoints such as hero meta summaries
+- analytics filters such as region-based summaries
+- community build summary analytics
 - PostgreSQL deployment configuration
 
 ## Tech Stack
@@ -86,6 +96,7 @@ Run these from the project root:
 G:\python\python.exe scripts/import_heroes.py
 G:\python\python.exe scripts/import_items.py
 G:\python\python.exe scripts/import_matches.py --limit 5
+G:\python\python.exe scripts/import_community_builds.py --hero-limit 3 --per-hero-limit 5
 ```
 
 These scripts import public Deadlock reference and match data into the local database before the analytics endpoints are queried.
