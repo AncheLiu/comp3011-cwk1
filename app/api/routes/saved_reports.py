@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.hero import Hero
 from app.models.saved_report import SavedReport
-from app.schemas.saved_report import SavedReportCreate, SavedReportRead
+from app.schemas.saved_report import SavedReportCreate, SavedReportRead, SavedReportUpdate
 
 
 router = APIRouter(prefix="/saved-reports", tags=["saved-reports"])
@@ -73,3 +73,52 @@ def get_saved_report(report_id: int, db: Session = Depends(get_db)) -> SavedRepo
             detail=f"Saved report with id {report_id} was not found.",
         )
     return _to_read_model(saved_report)
+
+
+@router.patch("/{report_id}", response_model=SavedReportRead)
+def update_saved_report(
+    report_id: int, payload: SavedReportUpdate, db: Session = Depends(get_db)
+) -> SavedReportRead:
+    saved_report = db.get(SavedReport, report_id)
+    if saved_report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Saved report with id {report_id} was not found.",
+        )
+
+    if payload.hero_id is not None:
+        hero = db.get(Hero, payload.hero_id)
+        if hero is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Hero with id {payload.hero_id} was not found.",
+            )
+
+    update_data = payload.model_dump(exclude_unset=True)
+
+    if "filters_json" in update_data:
+        saved_report.filters_json = (
+            json.dumps(update_data["filters_json"]) if update_data["filters_json"] is not None else None
+        )
+        update_data.pop("filters_json")
+
+    for field, value in update_data.items():
+        setattr(saved_report, field, value)
+
+    db.commit()
+    db.refresh(saved_report)
+    return _to_read_model(saved_report)
+
+
+@router.delete("/{report_id}", status_code=status.HTTP_200_OK)
+def delete_saved_report(report_id: int, db: Session = Depends(get_db)) -> dict[str, str]:
+    saved_report = db.get(SavedReport, report_id)
+    if saved_report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Saved report with id {report_id} was not found.",
+        )
+
+    db.delete(saved_report)
+    db.commit()
+    return {"message": "Saved report deleted successfully"}

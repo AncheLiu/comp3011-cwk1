@@ -95,3 +95,55 @@ def test_create_saved_report_rejects_unknown_hero(client) -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_update_saved_report(client) -> None:
+    seed_hero(client)
+
+    create_response = client.post(
+        "/saved-reports",
+        json={
+            "name": "Original Report",
+            "report_type": "hero_meta",
+            "hero_id": 1,
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    response = client.patch(
+        f"/saved-reports/{report_id}",
+        json={
+            "name": "Updated Report",
+            "region_mode": "europe",
+            "rank_min": 8,
+            "filters_json": {"min_matches": 100},
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "Updated Report"
+    assert body["region_mode"] == "europe"
+    assert body["rank_min"] == 8
+    assert body["filters_json"] == {"min_matches": 100}
+
+
+def test_delete_saved_report(client) -> None:
+    seed_hero(client)
+
+    create_response = client.post(
+        "/saved-reports",
+        json={
+            "name": "Delete Report",
+            "report_type": "hero_meta",
+            "hero_id": 1,
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    delete_response = client.delete(f"/saved-reports/{report_id}")
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {"message": "Saved report deleted successfully"}
+
+    get_response = client.get(f"/saved-reports/{report_id}")
+    assert get_response.status_code == 404
