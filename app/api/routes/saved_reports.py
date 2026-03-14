@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.routes.analytics import build_hero_matchups, build_hero_overview, build_hero_trend
+from app.api.routes.analytics import (
+    build_hero_matchups,
+    build_hero_overview,
+    build_hero_synergies,
+    build_hero_trend,
+)
 from app.db.session import get_db
 from app.models.hero import Hero
 from app.models.saved_report import SavedReport
@@ -107,6 +112,8 @@ def get_saved_report_result(report_id: int, db: Session = Depends(get_db)) -> Sa
         ).model_dump(mode="json")
     elif saved_report.report_type == "hero_matchups":
         result = build_hero_matchups(saved_report.hero_id, db).model_dump(mode="json")
+    elif saved_report.report_type == "hero_synergies":
+        result = build_hero_synergies(saved_report.hero_id, db).model_dump(mode="json")
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

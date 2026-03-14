@@ -178,6 +178,100 @@ def seed_matchups_data(client) -> None:
         db.close()
 
 
+def seed_synergies_data(client) -> None:
+    seed_hero(client, hero_id=16, name="Kelvin")
+    seed_hero(client, hero_id=52, name="Wraith")
+
+    override = client.app.dependency_overrides
+    dependency = next(iter(override.values()))
+    db: Session = next(dependency())
+    try:
+        db.add_all(
+            [
+                Match(
+                    id=2101,
+                    start_time=datetime(2026, 3, 12, 12, 0, tzinfo=UTC),
+                    game_mode="1",
+                    match_mode="1",
+                    region_mode="unknown",
+                    duration_seconds=2000,
+                    winning_team=0,
+                ),
+                Match(
+                    id=2102,
+                    start_time=datetime(2026, 3, 13, 12, 0, tzinfo=UTC),
+                    game_mode="1",
+                    match_mode="1",
+                    region_mode="unknown",
+                    duration_seconds=2100,
+                    winning_team=1,
+                ),
+            ]
+        )
+        db.add_all(
+            [
+                MatchParticipant(
+                    match_id=2101,
+                    account_id=3101,
+                    team=0,
+                    hero_id=1,
+                    match_result=1,
+                    player_kills=9,
+                    player_deaths=3,
+                    player_assists=11,
+                    net_worth=17000,
+                ),
+                MatchParticipant(
+                    match_id=2101,
+                    account_id=3102,
+                    team=0,
+                    hero_id=16,
+                    match_result=1,
+                    player_kills=4,
+                    player_deaths=5,
+                    player_assists=14,
+                    net_worth=14500,
+                ),
+                MatchParticipant(
+                    match_id=2101,
+                    account_id=3103,
+                    team=1,
+                    hero_id=52,
+                    match_result=0,
+                    player_kills=5,
+                    player_deaths=7,
+                    player_assists=8,
+                    net_worth=14000,
+                ),
+                MatchParticipant(
+                    match_id=2102,
+                    account_id=3104,
+                    team=1,
+                    hero_id=1,
+                    match_result=1,
+                    player_kills=7,
+                    player_deaths=5,
+                    player_assists=10,
+                    net_worth=16000,
+                ),
+                MatchParticipant(
+                    match_id=2102,
+                    account_id=3105,
+                    team=1,
+                    hero_id=52,
+                    match_result=1,
+                    player_kills=11,
+                    player_deaths=4,
+                    player_assists=9,
+                    net_worth=18000,
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
 def test_hero_overview_returns_zero_values_when_no_match_data(client) -> None:
     seed_hero(client)
 
@@ -341,3 +435,156 @@ def test_hero_matchups_rejects_unknown_hero(client) -> None:
     response = client.get("/analytics/heroes/999/matchups")
 
     assert response.status_code == 404
+
+
+def test_hero_synergies_returns_ally_hero_summary(client) -> None:
+    seed_hero(client)
+    seed_synergies_data(client)
+
+    response = client.get("/analytics/heroes/1/synergies")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "hero_id": 1,
+        "hero_name": "Infernus",
+        "items": [
+            {
+                "ally_hero_id": 16,
+                "ally_hero_name": "Kelvin",
+                "matches": 1,
+                "wins": 1,
+                "losses": 0,
+                "win_rate": 100.0,
+            },
+            {
+                "ally_hero_id": 52,
+                "ally_hero_name": "Wraith",
+                "matches": 1,
+                "wins": 1,
+                "losses": 0,
+                "win_rate": 100.0,
+            },
+        ],
+    }
+
+
+def test_hero_synergies_returns_empty_list_when_no_data(client) -> None:
+    seed_hero(client)
+
+    response = client.get("/analytics/heroes/1/synergies")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "hero_id": 1,
+        "hero_name": "Infernus",
+        "items": [],
+    }
+
+
+def test_hero_synergies_rejects_unknown_hero(client) -> None:
+    response = client.get("/analytics/heroes/999/synergies")
+
+    assert response.status_code == 404
+
+
+def test_hero_meta_returns_ranked_entries(client) -> None:
+    seed_hero(client)
+    seed_hero(client, hero_id=52, name="Wraith")
+    seed_match_participants_for_overview(client)
+
+    override = client.app.dependency_overrides
+    dependency = next(iter(override.values()))
+    db: Session = next(dependency())
+    try:
+        db.add(
+            MatchParticipant(
+                match_id=1001,
+                account_id=2999,
+                team=1,
+                hero_id=52,
+                match_result=0,
+                player_kills=3,
+                player_deaths=8,
+                player_assists=4,
+                net_worth=9000,
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.get("/analytics/heroes/meta")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "items": [
+            {
+                "hero_id": 1,
+                "hero_name": "Infernus",
+                "matches": 2,
+                "wins": 1,
+                "losses": 1,
+                "win_rate": 50.0,
+                "avg_kills": 8.0,
+                "avg_deaths": 5.5,
+                "avg_assists": 10.0,
+            },
+            {
+                "hero_id": 52,
+                "hero_name": "Wraith",
+                "matches": 1,
+                "wins": 0,
+                "losses": 1,
+                "win_rate": 0.0,
+                "avg_kills": 3.0,
+                "avg_deaths": 8.0,
+                "avg_assists": 4.0,
+            },
+        ]
+    }
+
+
+def test_hero_meta_supports_sort_and_limit(client) -> None:
+    seed_hero(client)
+    seed_hero(client, hero_id=52, name="Wraith")
+    seed_match_participants_for_overview(client)
+
+    override = client.app.dependency_overrides
+    dependency = next(iter(override.values()))
+    db: Session = next(dependency())
+    try:
+        db.add(
+            MatchParticipant(
+                match_id=1001,
+                account_id=2999,
+                team=1,
+                hero_id=52,
+                match_result=1,
+                player_kills=11,
+                player_deaths=2,
+                player_assists=6,
+                net_worth=17000,
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.get("/analytics/heroes/meta?sort_by=avg_kills&limit=1")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "items": [
+            {
+                "hero_id": 52,
+                "hero_name": "Wraith",
+                "matches": 1,
+                "wins": 1,
+                "losses": 0,
+                "win_rate": 100.0,
+                "avg_kills": 11.0,
+                "avg_deaths": 2.0,
+                "avg_assists": 6.0,
+            }
+        ]
+    }
