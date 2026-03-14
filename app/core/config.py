@@ -1,12 +1,16 @@
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
     app_name: str = "Deadlock Meta Intelligence API"
     app_version: str = "0.1.0"
     database_url: str = Field(
-        default="sqlite:///./deadlock_meta.db",
+        default=f"sqlite:///{(PROJECT_ROOT / 'deadlock_meta.db').as_posix()}",
         description="Database connection string for local development or deployment.",
     )
 
