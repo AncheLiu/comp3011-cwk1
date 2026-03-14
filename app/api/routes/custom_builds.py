@@ -74,3 +74,51 @@ def get_custom_build(build_id: int, db: Session = Depends(get_db)) -> CustomBuil
             detail=f"Custom build with id {build_id} was not found.",
         )
     return _to_read_model(custom_build)
+
+
+@router.put("/{build_id}", response_model=CustomBuildRead)
+def update_custom_build(
+    build_id: int, payload: CustomBuildCreate, db: Session = Depends(get_db)
+) -> CustomBuildRead:
+    custom_build = db.get(CustomBuild, build_id)
+    if custom_build is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Custom build with id {build_id} was not found.",
+        )
+
+    hero = db.get(Hero, payload.hero_id)
+    if hero is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hero with id {payload.hero_id} was not found.",
+        )
+
+    custom_build.title = payload.title
+    custom_build.hero_id = payload.hero_id
+    custom_build.author_name = payload.author_name
+    custom_build.playstyle_tag = payload.playstyle_tag
+    custom_build.description = payload.description
+    custom_build.items_json = json.dumps(payload.items_json)
+    custom_build.ability_order_json = (
+        json.dumps(payload.ability_order_json) if payload.ability_order_json is not None else None
+    )
+    custom_build.notes = payload.notes
+
+    db.commit()
+    db.refresh(custom_build)
+    return _to_read_model(custom_build)
+
+
+@router.delete("/{build_id}", status_code=status.HTTP_200_OK)
+def delete_custom_build(build_id: int, db: Session = Depends(get_db)) -> dict[str, str]:
+    custom_build = db.get(CustomBuild, build_id)
+    if custom_build is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Custom build with id {build_id} was not found.",
+        )
+
+    db.delete(custom_build)
+    db.commit()
+    return {"message": "Custom build deleted successfully"}

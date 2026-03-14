@@ -97,3 +97,60 @@ def test_create_custom_build_rejects_unknown_hero(client) -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_update_custom_build(client) -> None:
+    seed_hero(client)
+
+    create_response = client.post(
+        "/custom-builds",
+        json={
+            "title": "Original Build",
+            "hero_id": 1,
+            "author_name": "student",
+            "items_json": [1, 2],
+        },
+    )
+    build_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/custom-builds/{build_id}",
+        json={
+            "title": "Updated Build",
+            "hero_id": 1,
+            "author_name": "student",
+            "playstyle_tag": "late_game",
+            "description": "Updated description",
+            "items_json": [5, 6, 7],
+            "ability_order_json": [10, 20],
+            "notes": "Updated notes",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == "Updated Build"
+    assert body["items_json"] == [5, 6, 7]
+    assert body["playstyle_tag"] == "late_game"
+
+
+def test_delete_custom_build(client) -> None:
+    seed_hero(client)
+
+    create_response = client.post(
+        "/custom-builds",
+        json={
+            "title": "Delete Me",
+            "hero_id": 1,
+            "author_name": "student",
+            "items_json": [1],
+        },
+    )
+    build_id = create_response.json()["id"]
+
+    delete_response = client.delete(f"/custom-builds/{build_id}")
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {"message": "Custom build deleted successfully"}
+
+    get_response = client.get(f"/custom-builds/{build_id}")
+    assert get_response.status_code == 404
