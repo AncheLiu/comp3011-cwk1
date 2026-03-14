@@ -69,6 +69,16 @@ G:\python\python.exe scripts/import_items.py
 
 This script fetches public item and ability data from the Deadlock asset endpoint and imports it into the local database.
 
+## Import Match Data
+
+Run:
+
+```bash
+G:\python\python.exe scripts/import_matches.py --limit 5
+```
+
+This script fetches a small batch of recently fetched finished matches from the Deadlock API, retrieves detailed metadata for each match, and imports both match-level and participant-level statistics into the local database.
+
 ## Local Database
 
 By default, the project uses a local SQLite database:
