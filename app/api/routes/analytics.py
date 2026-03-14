@@ -20,15 +20,18 @@ from app.schemas.analytics import (
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
-@router.get("/heroes/{hero_id}/overview", response_model=HeroOverviewRead)
-def get_hero_overview(hero_id: int, db: Session = Depends(get_db)) -> HeroOverviewRead:
+def _get_existing_hero(hero_id: int, db: Session) -> Hero:
     hero = db.get(Hero, hero_id)
     if hero is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Hero with id {hero_id} was not found.",
         )
+    return hero
 
+
+def build_hero_overview(hero_id: int, db: Session) -> HeroOverviewRead:
+    hero = _get_existing_hero(hero_id, db)
     statement = select(
         func.count(MatchParticipant.id),
         func.coalesce(func.sum(case((MatchParticipant.match_result == 1, 1), else_=0)), 0),
@@ -59,20 +62,13 @@ def get_hero_overview(hero_id: int, db: Session = Depends(get_db)) -> HeroOvervi
     )
 
 
-@router.get("/heroes/{hero_id}/trend", response_model=HeroTrendRead)
-def get_hero_trend(
+def build_hero_trend(
     hero_id: int,
-    date_from: date | None = Query(default=None),
-    date_to: date | None = Query(default=None),
-    db: Session = Depends(get_db),
+    db: Session,
+    date_from: date | None = None,
+    date_to: date | None = None,
 ) -> HeroTrendRead:
-    hero = db.get(Hero, hero_id)
-    if hero is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Hero with id {hero_id} was not found.",
-        )
-
+    hero = _get_existing_hero(hero_id, db)
     trend_date = func.date(Match.start_time)
     statement = (
         select(
@@ -121,15 +117,8 @@ def get_hero_trend(
     )
 
 
-@router.get("/heroes/{hero_id}/matchups", response_model=HeroMatchupsRead)
-def get_hero_matchups(hero_id: int, db: Session = Depends(get_db)) -> HeroMatchupsRead:
-    hero = db.get(Hero, hero_id)
-    if hero is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Hero with id {hero_id} was not found.",
-        )
-
+def build_hero_matchups(hero_id: int, db: Session) -> HeroMatchupsRead:
+    hero = _get_existing_hero(hero_id, db)
     target_participant = aliased(MatchParticipant)
     enemy_participant = aliased(MatchParticipant)
     enemy_hero = aliased(Hero)
@@ -174,3 +163,23 @@ def get_hero_matchups(hero_id: int, db: Session = Depends(get_db)) -> HeroMatchu
         hero_name=hero.name,
         items=items,
     )
+
+
+@router.get("/heroes/{hero_id}/overview", response_model=HeroOverviewRead)
+def get_hero_overview(hero_id: int, db: Session = Depends(get_db)) -> HeroOverviewRead:
+    return build_hero_overview(hero_id, db)
+
+
+@router.get("/heroes/{hero_id}/trend", response_model=HeroTrendRead)
+def get_hero_trend(
+    hero_id: int,
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> HeroTrendRead:
+    return build_hero_trend(hero_id, db, date_from=date_from, date_to=date_to)
+
+
+@router.get("/heroes/{hero_id}/matchups", response_model=HeroMatchupsRead)
+def get_hero_matchups(hero_id: int, db: Session = Depends(get_db)) -> HeroMatchupsRead:
+    return build_hero_matchups(hero_id, db)

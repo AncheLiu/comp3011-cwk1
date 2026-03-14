@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -42,3 +43,10 @@ class SavedReportRead(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class SavedReportResultRead(BaseModel):
+    report_id: int
+    name: str
+    report_type: str
+    result: dict[str, Any]

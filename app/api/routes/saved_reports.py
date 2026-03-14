@@ -4,10 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.routes.analytics import build_hero_matchups, build_hero_overview, build_hero_trend
 from app.db.session import get_db
 from app.models.hero import Hero
 from app.models.saved_report import SavedReport
-from app.schemas.saved_report import SavedReportCreate, SavedReportRead, SavedReportUpdate
+from app.schemas.saved_report import (
+    SavedReportCreate,
+    SavedReportRead,
+    SavedReportResultRead,
+    SavedReportUpdate,
+)
 
 
 router = APIRouter(prefix="/saved-reports", tags=["saved-reports"])
@@ -73,6 +79,48 @@ def get_saved_report(report_id: int, db: Session = Depends(get_db)) -> SavedRepo
             detail=f"Saved report with id {report_id} was not found.",
         )
     return _to_read_model(saved_report)
+
+
+@router.get("/{report_id}/result", response_model=SavedReportResultRead)
+def get_saved_report_result(report_id: int, db: Session = Depends(get_db)) -> SavedReportResultRead:
+    saved_report = db.get(SavedReport, report_id)
+    if saved_report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Saved report with id {report_id} was not found.",
+        )
+
+    if saved_report.hero_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This saved report does not define a hero_id and cannot generate a hero analytics result.",
+        )
+
+    if saved_report.report_type in {"hero_meta", "hero_overview"}:
+        result = build_hero_overview(saved_report.hero_id, db).model_dump(mode="json")
+    elif saved_report.report_type == "hero_trend":
+        result = build_hero_trend(
+            saved_report.hero_id,
+            db,
+            date_from=saved_report.date_from,
+            date_to=saved_report.date_to,
+        ).model_dump(mode="json")
+    elif saved_report.report_type == "hero_matchups":
+        result = build_hero_matchups(saved_report.hero_id, db).model_dump(mode="json")
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Saved report type '{saved_report.report_type}' is not supported for generated results."
+            ),
+        )
+
+    return SavedReportResultRead(
+        report_id=saved_report.id,
+        name=saved_report.name,
+        report_type=saved_report.report_type,
+        result=result,
+    )
 
 
 @router.patch("/{report_id}", response_model=SavedReportRead)

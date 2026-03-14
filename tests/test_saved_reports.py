@@ -1,6 +1,10 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from app.models.hero import Hero
+from app.models.match import Match
+from app.models.match_participant import MatchParticipant
 
 
 def seed_hero(client, hero_id: int = 1) -> None:
@@ -147,3 +151,173 @@ def test_delete_saved_report(client) -> None:
 
     get_response = client.get(f"/saved-reports/{report_id}")
     assert get_response.status_code == 404
+
+
+def seed_match_data(client) -> None:
+    override = client.app.dependency_overrides
+    dependency = next(iter(override.values()))
+    db: Session = next(dependency())
+    try:
+        db.add_all(
+            [
+                Match(
+                    id=3001,
+                    start_time=datetime(2026, 3, 10, 12, 0, tzinfo=UTC),
+                    game_mode="1",
+                    match_mode="1",
+                    region_mode="unknown",
+                    duration_seconds=1800,
+                    winning_team=0,
+                ),
+                Match(
+                    id=3002,
+                    start_time=datetime(2026, 3, 11, 12, 0, tzinfo=UTC),
+                    game_mode="1",
+                    match_mode="1",
+                    region_mode="unknown",
+                    duration_seconds=1900,
+                    winning_team=1,
+                ),
+            ]
+        )
+        db.add_all(
+            [
+                MatchParticipant(
+                    match_id=3001,
+                    account_id=4001,
+                    team=0,
+                    hero_id=1,
+                    match_result=1,
+                    player_kills=10,
+                    player_deaths=4,
+                    player_assists=8,
+                    net_worth=15000,
+                ),
+                MatchParticipant(
+                    match_id=3002,
+                    account_id=4002,
+                    team=1,
+                    hero_id=1,
+                    match_result=1,
+                    player_kills=6,
+                    player_deaths=7,
+                    player_assists=12,
+                    net_worth=12000,
+                ),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_get_saved_report_result_for_hero_overview(client) -> None:
+    seed_hero(client)
+    seed_match_data(client)
+
+    create_response = client.post(
+        "/saved-reports",
+        json={
+            "name": "Overview Result",
+            "report_type": "hero_meta",
+            "hero_id": 1,
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    response = client.get(f"/saved-reports/{report_id}/result")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "report_id": report_id,
+        "name": "Overview Result",
+        "report_type": "hero_meta",
+        "result": {
+            "hero_id": 1,
+            "hero_name": "Infernus",
+            "matches": 2,
+            "wins": 2,
+            "losses": 0,
+            "win_rate": 100.0,
+            "avg_kills": 8.0,
+            "avg_deaths": 5.5,
+            "avg_assists": 10.0,
+            "avg_net_worth": 13500.0,
+        },
+    }
+
+
+def test_get_saved_report_result_for_hero_trend(client) -> None:
+    seed_hero(client)
+    seed_match_data(client)
+
+    create_response = client.post(
+        "/saved-reports",
+        json={
+            "name": "Trend Result",
+            "report_type": "hero_trend",
+            "hero_id": 1,
+            "date_from": "2026-03-11",
+            "date_to": "2026-03-11",
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    response = client.get(f"/saved-reports/{report_id}/result")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "report_id": report_id,
+        "name": "Trend Result",
+        "report_type": "hero_trend",
+        "result": {
+            "hero_id": 1,
+            "hero_name": "Infernus",
+            "bucket": "day",
+            "points": [
+                {
+                    "date": "2026-03-11",
+                    "matches": 1,
+                    "wins": 1,
+                    "losses": 0,
+                    "win_rate": 100.0,
+                    "avg_kills": 6.0,
+                    "avg_deaths": 7.0,
+                    "avg_assists": 12.0,
+                }
+            ],
+        },
+    }
+
+
+def test_get_saved_report_result_rejects_unsupported_type(client) -> None:
+    seed_hero(client)
+
+    create_response = client.post(
+        "/saved-reports",
+        json={
+            "name": "Unsupported Result",
+            "report_type": "synergy_report",
+            "hero_id": 1,
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    response = client.get(f"/saved-reports/{report_id}/result")
+
+    assert response.status_code == 400
+
+
+def test_get_saved_report_result_rejects_missing_hero_id(client) -> None:
+    create_response = client.post(
+        "/saved-reports",
+        json={
+            "name": "Missing Hero Result",
+            "report_type": "hero_meta",
+        },
+    )
+    report_id = create_response.json()["id"]
+
+    response = client.get(f"/saved-reports/{report_id}/result")
+
+    assert response.status_code == 400
