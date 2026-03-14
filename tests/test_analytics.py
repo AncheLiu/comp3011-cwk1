@@ -1,6 +1,9 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from app.models.hero import Hero
+from app.models.match import Match
 from app.models.match_participant import MatchParticipant
 
 
@@ -28,6 +31,28 @@ def seed_match_participants_for_overview(client) -> None:
     dependency = next(iter(override.values()))
     db: Session = next(dependency())
     try:
+        db.add_all(
+            [
+                Match(
+                    id=1001,
+                    start_time=datetime(2026, 3, 10, 12, 0, tzinfo=UTC),
+                    game_mode="1",
+                    match_mode="1",
+                    region_mode="unknown",
+                    duration_seconds=1800,
+                    winning_team=0,
+                ),
+                Match(
+                    id=1002,
+                    start_time=datetime(2026, 3, 11, 12, 0, tzinfo=UTC),
+                    game_mode="1",
+                    match_mode="1",
+                    region_mode="unknown",
+                    duration_seconds=1900,
+                    winning_team=0,
+                ),
+            ]
+        )
         db.add_all(
             [
                 MatchParticipant(
@@ -102,5 +127,73 @@ def test_hero_overview_returns_aggregated_stats(client) -> None:
 
 def test_hero_overview_rejects_unknown_hero(client) -> None:
     response = client.get("/analytics/heroes/999/overview")
+
+    assert response.status_code == 404
+
+
+def test_hero_trend_returns_daily_points(client) -> None:
+    seed_hero(client)
+    seed_match_participants_for_overview(client)
+
+    response = client.get("/analytics/heroes/1/trend")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "hero_id": 1,
+        "hero_name": "Infernus",
+        "bucket": "day",
+        "points": [
+            {
+                "date": "2026-03-10",
+                "matches": 1,
+                "wins": 1,
+                "losses": 0,
+                "win_rate": 100.0,
+                "avg_kills": 10.0,
+                "avg_deaths": 4.0,
+                "avg_assists": 8.0,
+            },
+            {
+                "date": "2026-03-11",
+                "matches": 1,
+                "wins": 0,
+                "losses": 1,
+                "win_rate": 0.0,
+                "avg_kills": 6.0,
+                "avg_deaths": 7.0,
+                "avg_assists": 12.0,
+            },
+        ],
+    }
+
+
+def test_hero_trend_supports_date_filters(client) -> None:
+    seed_hero(client)
+    seed_match_participants_for_overview(client)
+
+    response = client.get("/analytics/heroes/1/trend?date_from=2026-03-11&date_to=2026-03-11")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "hero_id": 1,
+        "hero_name": "Infernus",
+        "bucket": "day",
+        "points": [
+            {
+                "date": "2026-03-11",
+                "matches": 1,
+                "wins": 0,
+                "losses": 1,
+                "win_rate": 0.0,
+                "avg_kills": 6.0,
+                "avg_deaths": 7.0,
+                "avg_assists": 12.0,
+            }
+        ],
+    }
+
+
+def test_hero_trend_rejects_unknown_hero(client) -> None:
+    response = client.get("/analytics/heroes/999/trend")
 
     assert response.status_code == 404
