@@ -16,7 +16,7 @@ This project aims to:
 - hero reference endpoints
 - item listing endpoint
 - custom build CRUD
-- saved report CRUD
+- saved report CRUD and result generation
 - hero overview analytics
 - hero trend analytics
 - hero matchup analytics
@@ -46,6 +46,7 @@ This project aims to:
 - `POST /saved-reports`
 - `GET /saved-reports`
 - `GET /saved-reports/{id}`
+- `GET /saved-reports/{id}/result`
 - `PATCH /saved-reports/{id}`
 - `DELETE /saved-reports/{id}`
 
@@ -58,7 +59,6 @@ This project aims to:
 ## Next Planned Features
 
 - match listing and match detail endpoints
-- saved report result generation
 - broader analytics endpoints such as hero meta summaries
 - PostgreSQL deployment configuration
 

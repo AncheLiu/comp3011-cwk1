@@ -224,6 +224,19 @@ Returns saved report definitions.
 
 Returns a single saved report definition.
 
+### `GET /saved-reports/{id}/result` `Implemented`
+
+Generates a result from the saved report configuration.
+
+Currently supported saved report types:
+
+- `hero_meta`
+- `hero_overview`
+- `hero_trend`
+- `hero_matchups`
+
+If the saved report does not include a `hero_id`, or if the `report_type` is not currently supported, the endpoint returns `400 Bad Request`.
+
 ### `PATCH /saved-reports/{id}` `Implemented`
 
 Partially updates a saved report.
