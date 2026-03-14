@@ -127,12 +127,22 @@ PostgreSQL is still the intended target database for a more production-style dep
 - more realistic backend deployment
 - future analytics expansion
 
+## Implemented Architecture Notes
+
+The current implementation already includes:
+
+- route modules for heroes, items, custom builds, saved reports and analytics
+- SQLAlchemy models for heroes, items, matches, match participants, custom builds and saved reports
+- import scripts for heroes, items and recent match samples
+- analytics endpoints built directly on the imported match fact tables
+- isolated API tests using a shared in-memory SQLite test database
+
 ## Future Architectural Extensions
 
 Planned future improvements include:
 
 - repository layer implementation
 - service layer for hero analytics
-- ETL scripts for public data ingestion
+- broader ETL coverage and refresh jobs
 - precomputed analytics jobs
 - migration support using Alembic

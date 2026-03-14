@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the planned REST API for the Deadlock Meta Intelligence API project.
+This document outlines the implemented and planned REST API for the Deadlock Meta Intelligence API project.
 
 The API is divided into three groups:
 
@@ -11,6 +11,8 @@ The API is divided into three groups:
 - analytics endpoints
 
 All responses will use JSON.
+
+Implemented endpoints in this document are marked as `Implemented`. Endpoints that are still part of the roadmap are marked as `Planned`.
 
 ## Error Response Format
 
@@ -35,37 +37,25 @@ Common status codes:
 
 ## Base Resource Endpoints
 
-### `GET /heroes`
+### `GET /heroes` `Implemented`
 
-Returns a paginated list of heroes.
-
-Query parameters:
-
-- `name`
-- `hero_type`
-- `limit`
-- `offset`
+Returns a list of heroes currently stored in the local database.
 
 Example response:
 
 ```json
-{
-  "items": [
-    {
-      "id": 1,
-      "name": "Infernus",
-      "hero_type": "marksman",
-      "complexity": 1,
-      "image_small_url": "https://..."
-    }
-  ],
-  "total": 1,
-  "limit": 20,
-  "offset": 0
-}
+[
+  {
+    "id": 1,
+    "name": "Infernus",
+    "hero_type": "marksman",
+    "complexity": 1,
+    "image_small_url": "https://..."
+  }
+]
 ```
 
-### `GET /heroes/{hero_id}`
+### `GET /heroes/{hero_id}` `Implemented`
 
 Returns detailed information for a single hero.
 
@@ -83,19 +73,11 @@ Example response:
 }
 ```
 
-### `GET /items`
+### `GET /items` `Implemented`
 
-Returns a paginated list of items or abilities.
+Returns a list of items and abilities currently stored in the local database.
 
-Query parameters:
-
-- `name`
-- `item_type`
-- `hero_id`
-- `limit`
-- `offset`
-
-### `GET /matches`
+### `GET /matches` `Planned`
 
 Returns a paginated list of matches.
 
@@ -129,7 +111,7 @@ Example response:
 }
 ```
 
-### `GET /matches/{match_id}`
+### `GET /matches/{match_id}` `Planned`
 
 Returns detailed match information including participants.
 
@@ -154,7 +136,7 @@ Example response:
 }
 ```
 
-### `GET /community-builds`
+### `GET /community-builds` `Planned`
 
 Returns community builds imported from public sources.
 
@@ -169,7 +151,7 @@ Query parameters:
 
 ## CRUD Endpoints
 
-### `POST /custom-builds`
+### `POST /custom-builds` `Implemented`
 
 Creates a new custom build.
 
@@ -188,27 +170,19 @@ Example request body:
 }
 ```
 
-### `GET /custom-builds`
+### `GET /custom-builds` `Implemented`
 
-Returns a paginated list of custom builds.
+Returns all custom builds currently stored in the local database.
 
-Query parameters:
-
-- `hero_id`
-- `author_name`
-- `playstyle_tag`
-- `limit`
-- `offset`
-
-### `GET /custom-builds/{id}`
+### `GET /custom-builds/{id}` `Implemented`
 
 Returns a single custom build.
 
-### `PUT /custom-builds/{id}`
+### `PUT /custom-builds/{id}` `Implemented`
 
 Updates an existing custom build.
 
-### `DELETE /custom-builds/{id}`
+### `DELETE /custom-builds/{id}` `Implemented`
 
 Deletes a custom build.
 
@@ -220,7 +194,7 @@ Example response:
 }
 ```
 
-### `POST /saved-reports`
+### `POST /saved-reports` `Implemented`
 
 Creates a saved report definition.
 
@@ -242,25 +216,25 @@ Example request body:
 }
 ```
 
-### `GET /saved-reports`
+### `GET /saved-reports` `Implemented`
 
 Returns saved report definitions.
 
-### `GET /saved-reports/{id}`
+### `GET /saved-reports/{id}` `Implemented`
 
 Returns a single saved report definition.
 
-### `PATCH /saved-reports/{id}`
+### `PATCH /saved-reports/{id}` `Implemented`
 
 Partially updates a saved report.
 
-### `DELETE /saved-reports/{id}`
+### `DELETE /saved-reports/{id}` `Implemented`
 
 Deletes a saved report.
 
 ## Analytics Endpoints
 
-### `GET /analytics/heroes/meta`
+### `GET /analytics/heroes/meta` `Planned`
 
 Returns high-level hero meta data.
 
@@ -292,33 +266,32 @@ Example response:
 }
 ```
 
-### `GET /analytics/heroes/{hero_id}/overview`
+### `GET /analytics/heroes/{hero_id}/overview` `Implemented`
 
-Returns summary performance metrics for a hero.
+Returns summary performance metrics for a hero, including matches, wins, losses, win rate, average kills, average deaths, average assists and average net worth.
 
-### `GET /analytics/heroes/{hero_id}/trend`
+### `GET /analytics/heroes/{hero_id}/trend` `Implemented`
 
-Returns time-based hero trend data.
+Returns time-based hero trend data grouped by day.
 
 Query parameters:
 
 - `date_from`
 - `date_to`
-- `bucket`
 
-### `GET /analytics/heroes/{hero_id}/matchups`
+### `GET /analytics/heroes/{hero_id}/matchups` `Implemented`
 
 Returns matchup performance against enemy heroes.
 
-### `GET /analytics/heroes/{hero_id}/synergies`
+### `GET /analytics/heroes/{hero_id}/synergies` `Planned`
 
 Returns synergy performance with allied heroes.
 
-### `GET /analytics/heroes/{hero_id}/community-build-summary`
+### `GET /analytics/heroes/{hero_id}/community-build-summary` `Planned`
 
 Returns a summary of popular community builds for a hero.
 
-### `POST /analytics/generate-report`
+### `POST /analytics/generate-report` `Planned`
 
 Generates a report summary based on the provided filter set.
 
