@@ -2,13 +2,19 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import case, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.db.session import get_db
 from app.models.hero import Hero
 from app.models.match import Match
 from app.models.match_participant import MatchParticipant
-from app.schemas.analytics import HeroOverviewRead, HeroTrendPointRead, HeroTrendRead
+from app.schemas.analytics import (
+    HeroMatchupRead,
+    HeroMatchupsRead,
+    HeroOverviewRead,
+    HeroTrendPointRead,
+    HeroTrendRead,
+)
 
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -112,4 +118,59 @@ def get_hero_trend(
         hero_name=hero.name,
         bucket="day",
         points=points,
+    )
+
+
+@router.get("/heroes/{hero_id}/matchups", response_model=HeroMatchupsRead)
+def get_hero_matchups(hero_id: int, db: Session = Depends(get_db)) -> HeroMatchupsRead:
+    hero = db.get(Hero, hero_id)
+    if hero is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hero with id {hero_id} was not found.",
+        )
+
+    target_participant = aliased(MatchParticipant)
+    enemy_participant = aliased(MatchParticipant)
+    enemy_hero = aliased(Hero)
+
+    statement = (
+        select(
+            enemy_participant.hero_id,
+            enemy_hero.name,
+            func.count(enemy_participant.id),
+            func.coalesce(func.sum(case((target_participant.match_result == 1, 1), else_=0)), 0),
+        )
+        .join(
+            enemy_participant,
+            (enemy_participant.match_id == target_participant.match_id)
+            & (enemy_participant.team != target_participant.team),
+        )
+        .join(enemy_hero, enemy_hero.id == enemy_participant.hero_id)
+        .where(target_participant.hero_id == hero_id)
+        .group_by(enemy_participant.hero_id, enemy_hero.name)
+        .order_by(func.count(enemy_participant.id).desc(), enemy_hero.name.asc())
+    )
+
+    rows = db.execute(statement).all()
+    items = []
+    for enemy_hero_id, enemy_hero_name, matches, wins in rows:
+        matches = int(matches or 0)
+        wins = int(wins or 0)
+        losses = matches - wins
+        items.append(
+            HeroMatchupRead(
+                enemy_hero_id=int(enemy_hero_id),
+                enemy_hero_name=enemy_hero_name,
+                matches=matches,
+                wins=wins,
+                losses=losses,
+                win_rate=round((wins / matches) * 100, 2) if matches else 0.0,
+            )
+        )
+
+    return HeroMatchupsRead(
+        hero_id=hero.id,
+        hero_name=hero.name,
+        items=items,
     )

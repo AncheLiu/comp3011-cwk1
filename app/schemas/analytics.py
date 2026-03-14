@@ -30,3 +30,18 @@ class HeroTrendRead(BaseModel):
     hero_name: str
     bucket: str
     points: list[HeroTrendPointRead]
+
+
+class HeroMatchupRead(BaseModel):
+    enemy_hero_id: int
+    enemy_hero_name: str
+    matches: int
+    wins: int
+    losses: int
+    win_rate: float
+
+
+class HeroMatchupsRead(BaseModel):
+    hero_id: int
+    hero_name: str
+    items: list[HeroMatchupRead]
