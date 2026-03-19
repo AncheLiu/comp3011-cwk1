@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.community_build import CommunityBuild
 from app.models.hero import Hero
+from app.models.item import Item
 
 
 def seed_hero(client, hero_id: int = 1, name: str = "Infernus") -> None:
@@ -36,6 +37,12 @@ def seed_community_builds(client) -> None:
     try:
         db.add_all(
             [
+                Item(id=968099481, name="Toxic Bullets", class_name="item_968099481", item_type="weapon"),
+                Item(id=2081037738, name="Ricochet", class_name="item_2081037738", item_type="weapon"),
+            ]
+        )
+        db.add_all(
+            [
                 CommunityBuild(
                     hero_build_id=1013,
                     hero_id=1,
@@ -47,7 +54,26 @@ def seed_community_builds(client) -> None:
                     last_updated_timestamp=datetime(2026, 3, 10, 12, 0, tzinfo=UTC),
                     favorites_count=100,
                     tags_json=json.dumps([1, 2]),
-                    details_json=json.dumps({"mod_categories": []}),
+                    details_json=json.dumps(
+                        {
+                            "mod_categories": [
+                                {
+                                    "name": "Early Game",
+                                    "optional": False,
+                                    "mods": [
+                                        {"ability_id": 968099481, "annotation": "Start here"},
+                                        {"ability_id": 2081037738, "annotation": "Core follow-up"},
+                                    ],
+                                }
+                            ],
+                            "ability_order": {
+                                "currency_changes": [
+                                    {"ability_id": 1593133799, "annotation": "First point"},
+                                    {"ability_id": 491391007, "annotation": "Second point"},
+                                ]
+                            },
+                        }
+                    ),
                 ),
                 CommunityBuild(
                     hero_build_id=1014,
@@ -105,7 +131,29 @@ def test_get_community_build_returns_details(client) -> None:
     body = response.json()
     assert body["hero_build_id"] == 1013
     assert body["tags_json"] == [1, 2]
-    assert body["details_json"] == {"mod_categories": []}
+    assert "mod_categories" in body["details_json"]
+
+
+def test_clone_community_build_to_custom_creates_structured_build(client) -> None:
+    seed_community_builds(client)
+
+    response = client.post("/community-builds/1/clone-to-custom")
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["title"] == "Zieth Infernus (Custom Copy)"
+    assert body["hero_id"] == 1
+    assert body["source_community_build_id"] == 1013
+    assert len(body["items"]) == 2
+    assert body["items"][0]["item_name"] == "Toxic Bullets"
+    assert len(body["abilities"]) == 2
+    assert body["abilities"][0]["ability_id"] == 1593133799
+
+
+def test_clone_community_build_rejects_unknown_id(client) -> None:
+    response = client.post("/community-builds/999/clone-to-custom")
+
+    assert response.status_code == 404
 
 
 def test_get_community_build_rejects_unknown_id(client) -> None:
