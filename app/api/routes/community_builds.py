@@ -114,7 +114,13 @@ def _to_custom_build_read(custom_build: CustomBuild, hero_name: str, items_by_id
     )
 
 
-@router.get("", response_model=list[CommunityBuildRead])
+@router.get(
+    "",
+    response_model=list[CommunityBuildRead],
+    summary="List imported community builds",
+    description="Returns community builds imported from public Deadlock sources, optionally filtered to a single hero.",
+    responses={404: {"description": "Requested hero was not found."}},
+)
 def list_community_builds(
     hero_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
@@ -138,7 +144,13 @@ def list_community_builds(
     return [CommunityBuildRead.model_validate(build) for build in builds]
 
 
-@router.get("/{build_id}", response_model=CommunityBuildDetailRead)
+@router.get(
+    "/{build_id}",
+    response_model=CommunityBuildDetailRead,
+    summary="Get a community build",
+    description="Returns the stored community build snapshot, including tags and the raw imported build details payload.",
+    responses={404: {"description": "Community build was not found."}},
+)
 def get_community_build(build_id: int, db: Session = Depends(get_db)) -> CommunityBuildDetailRead:
     build = db.get(CommunityBuild, build_id)
     if build is None:
@@ -164,7 +176,21 @@ def get_community_build(build_id: int, db: Session = Depends(get_db)) -> Communi
     )
 
 
-@router.post("/{build_id}/clone-to-custom", response_model=CustomBuildRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{build_id}/clone-to-custom",
+    response_model=CustomBuildRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Clone a community build into a custom build",
+    description=(
+        "Creates an editable custom build draft from an imported community build. "
+        "The endpoint copies the hero and description, stores the source community build id, "
+        "extracts item rows from mod categories, and extracts ability progression from the imported ability order."
+    ),
+    responses={
+        201: {"description": "Custom build draft created successfully."},
+        404: {"description": "Community build or referenced hero was not found."},
+    },
+)
 def clone_community_build_to_custom(build_id: int, db: Session = Depends(get_db)) -> CustomBuildRead:
     build = db.get(CommunityBuild, build_id)
     if build is None:

@@ -41,7 +41,14 @@ def _to_read_model(saved_report: SavedReport) -> SavedReportRead:
     )
 
 
-@router.post("", response_model=SavedReportRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=SavedReportRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a saved report preset",
+    description="Creates a reusable report definition that can later generate analytics results from stored filters.",
+    responses={404: {"description": "Referenced hero was not found."}},
+)
 def create_saved_report(payload: SavedReportCreate, db: Session = Depends(get_db)) -> SavedReportRead:
     if payload.hero_id is not None:
         hero = db.get(Hero, payload.hero_id)
@@ -86,7 +93,19 @@ def get_saved_report(report_id: int, db: Session = Depends(get_db)) -> SavedRepo
     return _to_read_model(saved_report)
 
 
-@router.get("/{report_id}/result", response_model=SavedReportResultRead)
+@router.get(
+    "/{report_id}/result",
+    response_model=SavedReportResultRead,
+    summary="Generate a saved report result",
+    description=(
+        "Generates analytics output from a saved report preset. "
+        "Currently supports hero_overview, hero_meta, hero_trend, hero_matchups, and hero_synergies."
+    ),
+    responses={
+        400: {"description": "The saved report cannot generate a result because required fields are missing or the report type is unsupported."},
+        404: {"description": "Saved report was not found."},
+    },
+)
 def get_saved_report_result(report_id: int, db: Session = Depends(get_db)) -> SavedReportResultRead:
     saved_report = db.get(SavedReport, report_id)
     if saved_report is None:

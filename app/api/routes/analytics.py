@@ -264,7 +264,12 @@ def build_hero_meta(db: Session, sort_by: str = "win_rate", limit: int = 10) -> 
     return HeroMetaRead(items=items[:limit])
 
 
-@router.get("/heroes/meta", response_model=HeroMetaRead)
+@router.get(
+    "/heroes/meta",
+    response_model=HeroMetaRead,
+    summary="Get ranked hero meta overview",
+    description="Returns a ranked summary of imported hero performance across all stored match participant records.",
+)
 def get_hero_meta(
     sort_by: str = Query(default="win_rate"),
     limit: int = Query(default=10, ge=1, le=50),
@@ -273,12 +278,24 @@ def get_hero_meta(
     return build_hero_meta(db, sort_by=sort_by, limit=limit)
 
 
-@router.get("/heroes/{hero_id}/overview", response_model=HeroOverviewRead)
+@router.get(
+    "/heroes/{hero_id}/overview",
+    response_model=HeroOverviewRead,
+    summary="Get hero overview analytics",
+    description="Returns aggregate performance metrics for a single hero across imported matches.",
+    responses={404: {"description": "Hero was not found."}},
+)
 def get_hero_overview(hero_id: int, db: Session = Depends(get_db)) -> HeroOverviewRead:
     return build_hero_overview(hero_id, db)
 
 
-@router.get("/heroes/{hero_id}/trend", response_model=HeroTrendRead)
+@router.get(
+    "/heroes/{hero_id}/trend",
+    response_model=HeroTrendRead,
+    summary="Get hero trend analytics",
+    description="Returns day-by-day hero performance trends, optionally filtered by an inclusive date range.",
+    responses={404: {"description": "Hero was not found."}},
+)
 def get_hero_trend(
     hero_id: int,
     date_from: date | None = Query(default=None),
@@ -288,11 +305,23 @@ def get_hero_trend(
     return build_hero_trend(hero_id, db, date_from=date_from, date_to=date_to)
 
 
-@router.get("/heroes/{hero_id}/matchups", response_model=HeroMatchupsRead)
+@router.get(
+    "/heroes/{hero_id}/matchups",
+    response_model=HeroMatchupsRead,
+    summary="Get hero matchup analytics",
+    description="Returns performance against enemy heroes based on imported match participant records.",
+    responses={404: {"description": "Hero was not found."}},
+)
 def get_hero_matchups(hero_id: int, db: Session = Depends(get_db)) -> HeroMatchupsRead:
     return build_hero_matchups(hero_id, db)
 
 
-@router.get("/heroes/{hero_id}/synergies", response_model=HeroSynergiesRead)
+@router.get(
+    "/heroes/{hero_id}/synergies",
+    response_model=HeroSynergiesRead,
+    summary="Get hero synergy analytics",
+    description="Returns performance alongside allied heroes based on imported match participant records.",
+    responses={404: {"description": "Hero was not found."}},
+)
 def get_hero_synergies(hero_id: int, db: Session = Depends(get_db)) -> HeroSynergiesRead:
     return build_hero_synergies(hero_id, db)

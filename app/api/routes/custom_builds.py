@@ -114,7 +114,17 @@ def _populate_build_children(custom_build: CustomBuild, payload: CustomBuildCrea
     ]
 
 
-@router.post("", response_model=CustomBuildRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=CustomBuildRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a custom build",
+    description="Creates a relational custom build with ordered item rows and ordered ability progression rows.",
+    responses={
+        201: {"description": "Custom build created successfully."},
+        404: {"description": "Referenced hero or item was not found."},
+    },
+)
 def create_custom_build(payload: CustomBuildCreate, db: Session = Depends(get_db)) -> CustomBuildRead:
     hero = _get_existing_hero(payload.hero_id, db)
     items_by_id = _validate_items(payload, db)
@@ -137,7 +147,12 @@ def create_custom_build(payload: CustomBuildCreate, db: Session = Depends(get_db
     return _to_detail_read_model(custom_build, hero.name, items_by_id)
 
 
-@router.get("", response_model=list[CustomBuildListRead])
+@router.get(
+    "",
+    response_model=list[CustomBuildListRead],
+    summary="List custom builds",
+    description="Returns summary rows for all custom builds, including item and ability counts for each build.",
+)
 def list_custom_builds(db: Session = Depends(get_db)) -> list[CustomBuildListRead]:
     statement = _statement_with_related().order_by(CustomBuild.created_at.desc(), CustomBuild.id.desc())
     custom_builds = list(db.scalars(statement).all())
@@ -165,7 +180,13 @@ def list_custom_builds(db: Session = Depends(get_db)) -> list[CustomBuildListRea
     ]
 
 
-@router.get("/{build_id}", response_model=CustomBuildRead)
+@router.get(
+    "/{build_id}",
+    response_model=CustomBuildRead,
+    summary="Get a custom build",
+    description="Returns a single custom build with expanded item details and ordered ability progression.",
+    responses={404: {"description": "Custom build was not found."}},
+)
 def get_custom_build(build_id: int, db: Session = Depends(get_db)) -> CustomBuildRead:
     statement = _statement_with_related().where(CustomBuild.id == build_id)
     custom_build = db.scalars(statement).one_or_none()
@@ -184,7 +205,13 @@ def get_custom_build(build_id: int, db: Session = Depends(get_db)) -> CustomBuil
     return _to_detail_read_model(custom_build, hero.name, items_by_id)
 
 
-@router.put("/{build_id}", response_model=CustomBuildRead)
+@router.put(
+    "/{build_id}",
+    response_model=CustomBuildRead,
+    summary="Replace a custom build",
+    description="Fully replaces a custom build, including all ordered item rows and ability progression rows.",
+    responses={404: {"description": "Custom build, hero, or item was not found."}},
+)
 def update_custom_build(
     build_id: int, payload: CustomBuildCreate, db: Session = Depends(get_db)
 ) -> CustomBuildRead:
@@ -236,7 +263,13 @@ def update_custom_build(
     return _to_detail_read_model(custom_build, hero.name, items_by_id)
 
 
-@router.delete("/{build_id}", status_code=status.HTTP_200_OK)
+@router.delete(
+    "/{build_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete a custom build",
+    description="Deletes a custom build and its related item and ability rows.",
+    responses={404: {"description": "Custom build was not found."}},
+)
 def delete_custom_build(build_id: int, db: Session = Depends(get_db)) -> dict[str, str]:
     custom_build = db.get(CustomBuild, build_id)
     if custom_build is None:
