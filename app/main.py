@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.analytics import router as analytics_router
 from app.api.routes.community_builds import router as community_builds_router
@@ -25,6 +26,14 @@ app = FastAPI(
     description="A data-driven API for Deadlock analytics and build management.",
     version=settings.app_version,
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(heroes_router)

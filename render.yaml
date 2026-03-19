@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: deadlock-meta-intelligence-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deadlock-meta-postgres
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
+
+databases:
+  - name: deadlock-meta-postgres
+    databaseName: deadlock_meta
+    plan: free
