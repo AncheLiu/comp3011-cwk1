@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.hero import Hero
+from app.models.item import Item
 
 
 def seed_hero(client, hero_id: int = 1) -> None:
@@ -22,130 +23,172 @@ def seed_hero(client, hero_id: int = 1) -> None:
         db.close()
 
 
+def seed_items(client) -> None:
+    override = client.app.dependency_overrides
+    dependency = next(iter(override.values()))
+    db: Session = next(dependency())
+    try:
+        db.add_all(
+            [
+                Item(id=1, name="Toxic Bullets", class_name="item_1", item_type="weapon"),
+                Item(id=2, name="Ricochet", class_name="item_2", item_type="weapon"),
+                Item(id=3, name="Leech", class_name="item_3", item_type="vitality"),
+                Item(id=4, name="Metal Skin", class_name="item_4", item_type="vitality"),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+def build_payload() -> dict:
+    return {
+        "title": "Afterburn Rush Build",
+        "hero_id": 1,
+        "author_name": "student",
+        "playstyle_tag": "damage_over_time",
+        "description": "Focus on sustained burn damage",
+        "notes": "Use against squishy teams",
+        "source_community_build_id": 1013,
+        "items": [
+            {
+                "item_id": 1,
+                "category_name": "Early Game",
+                "display_order": 1,
+                "is_optional": False,
+                "annotation": "Start here",
+            },
+            {
+                "item_id": 2,
+                "category_name": "Core",
+                "display_order": 2,
+                "is_optional": False,
+                "annotation": "Mid-game spike",
+            },
+        ],
+        "abilities": [
+            {
+                "ability_id": 1593133799,
+                "display_order": 1,
+                "annotation": "First point",
+            },
+            {
+                "ability_id": 491391007,
+                "display_order": 2,
+                "annotation": "Second point",
+            },
+        ],
+    }
+
+
 def test_create_custom_build(client) -> None:
     seed_hero(client)
+    seed_items(client)
 
-    response = client.post(
-        "/custom-builds",
-        json={
-            "title": "Afterburn Rush Build",
-            "hero_id": 1,
-            "author_name": "student",
-            "playstyle_tag": "damage_over_time",
-            "description": "Focus on sustained burn damage",
-            "items_json": [968099481, 2081037738],
-            "ability_order_json": [1593133799, 491391007],
-            "notes": "Use against squishy teams",
-        },
-    )
+    response = client.post("/custom-builds", json=build_payload())
 
     assert response.status_code == 201
     body = response.json()
     assert body["title"] == "Afterburn Rush Build"
     assert body["hero_id"] == 1
-    assert body["items_json"] == [968099481, 2081037738]
+    assert body["hero_name"] == "Infernus"
+    assert body["source_community_build_id"] == 1013
+    assert len(body["items"]) == 2
+    assert body["items"][0]["item_name"] == "Toxic Bullets"
+    assert len(body["abilities"]) == 2
 
 
 def test_list_custom_builds(client) -> None:
     seed_hero(client)
+    seed_items(client)
 
-    client.post(
-        "/custom-builds",
-        json={
-            "title": "Starter Build",
-            "hero_id": 1,
-            "author_name": "student",
-            "items_json": [1, 2, 3],
-        },
-    )
+    client.post("/custom-builds", json=build_payload())
 
     response = client.get("/custom-builds")
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["item_count"] == 2
+    assert body[0]["ability_count"] == 2
 
 
 def test_get_custom_build_by_id(client) -> None:
     seed_hero(client)
+    seed_items(client)
 
-    create_response = client.post(
-        "/custom-builds",
-        json={
-            "title": "Lane Build",
-            "hero_id": 1,
-            "author_name": "student",
-            "items_json": [10, 20],
-        },
-    )
+    create_response = client.post("/custom-builds", json=build_payload())
     build_id = create_response.json()["id"]
 
     response = client.get(f"/custom-builds/{build_id}")
 
     assert response.status_code == 200
-    assert response.json()["id"] == build_id
+    body = response.json()
+    assert body["id"] == build_id
+    assert body["items"][1]["item_name"] == "Ricochet"
 
 
 def test_create_custom_build_rejects_unknown_hero(client) -> None:
-    response = client.post(
-        "/custom-builds",
-        json={
-            "title": "Invalid Hero Build",
-            "hero_id": 999,
-            "author_name": "student",
-            "items_json": [1],
-        },
-    )
+    seed_items(client)
+
+    response = client.post("/custom-builds", json=build_payload())
+
+    assert response.status_code == 404
+
+
+def test_create_custom_build_rejects_unknown_item(client) -> None:
+    seed_hero(client)
+    payload = build_payload()
+    payload["items"][0]["item_id"] = 999
+
+    response = client.post("/custom-builds", json=payload)
 
     assert response.status_code == 404
 
 
 def test_update_custom_build(client) -> None:
     seed_hero(client)
+    seed_items(client)
 
-    create_response = client.post(
-        "/custom-builds",
-        json={
-            "title": "Original Build",
-            "hero_id": 1,
-            "author_name": "student",
-            "items_json": [1, 2],
-        },
-    )
+    create_response = client.post("/custom-builds", json=build_payload())
     build_id = create_response.json()["id"]
 
-    response = client.put(
-        f"/custom-builds/{build_id}",
-        json={
-            "title": "Updated Build",
-            "hero_id": 1,
-            "author_name": "student",
-            "playstyle_tag": "late_game",
-            "description": "Updated description",
-            "items_json": [5, 6, 7],
-            "ability_order_json": [10, 20],
-            "notes": "Updated notes",
-        },
-    )
+    payload = build_payload()
+    payload["title"] = "Updated Build"
+    payload["playstyle_tag"] = "late_game"
+    payload["items"] = [
+        {
+            "item_id": 4,
+            "category_name": "Defense",
+            "display_order": 1,
+            "is_optional": True,
+            "annotation": "Situational defense",
+        }
+    ]
+    payload["abilities"] = [
+        {
+            "ability_id": 3516947824,
+            "display_order": 1,
+            "annotation": "New priority",
+        }
+    ]
+
+    response = client.put(f"/custom-builds/{build_id}", json=payload)
 
     assert response.status_code == 200
     body = response.json()
     assert body["title"] == "Updated Build"
-    assert body["items_json"] == [5, 6, 7]
     assert body["playstyle_tag"] == "late_game"
+    assert len(body["items"]) == 1
+    assert body["items"][0]["item_name"] == "Metal Skin"
+    assert len(body["abilities"]) == 1
 
 
 def test_delete_custom_build(client) -> None:
     seed_hero(client)
+    seed_items(client)
 
-    create_response = client.post(
-        "/custom-builds",
-        json={
-            "title": "Delete Me",
-            "hero_id": 1,
-            "author_name": "student",
-            "items_json": [1],
-        },
-    )
+    create_response = client.post("/custom-builds", json=build_payload())
     build_id = create_response.json()["id"]
 
     delete_response = client.delete(f"/custom-builds/{build_id}")
