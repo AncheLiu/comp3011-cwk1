@@ -14,6 +14,13 @@ Interactive OpenAPI documentation is also available through FastAPI:
 - local: `http://127.0.0.1:8000/docs`
 - deployed: [Render Swagger UI](https://deadlock-meta-intelligence-api-tjzo.onrender.com/docs)
 
+## Submission Documents
+
+- API documentation: `docs/api-documentation.pdf`
+- Technical report: `docs/technical-report.pdf`
+- GenAI supplementary material: `docs/genai-supplementary.pdf`
+- Presentation slides: `docs/Anche Liu.pptx`
+
 ## Project Goals
 
 This project aims to:
@@ -92,7 +99,6 @@ This keeps the build model easier to extend for later PostgreSQL deployment and 
 
 - analytics filters such as region-based summaries
 - community build summary analytics
-- PostgreSQL deployment configuration and production environment setup
 
 ## Tech Stack
 
