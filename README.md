@@ -2,6 +2,18 @@
 
 A data-driven web API for analysing public Deadlock game data. The project ingests community data about heroes, items and matches, stores it in a relational database, and exposes endpoints for querying hero performance, match trends, matchup statistics and user-defined resources.
 
+## API Documentation
+
+Formal API documentation is provided in:
+
+- [Markdown API documentation](G:\uni_course\comp3011 web services\cwk1\comp3011-cwk1\docs\api-documentation.md)
+- PDF API documentation at `docs/api-documentation.pdf` once exported for submission
+
+Interactive OpenAPI documentation is also available through FastAPI:
+
+- local: `http://127.0.0.1:8000/docs`
+- deployed: [Render Swagger UI](https://deadlock-meta-intelligence-api-tjzo.onrender.com/docs)
+
 ## Project Goals
 
 This project aims to:
