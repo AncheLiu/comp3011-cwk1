@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -15,12 +15,23 @@ class CustomBuild(Base):
     author_name: Mapped[str] = mapped_column(String(100), nullable=False)
     playstyle_tag: Mapped[str | None] = mapped_column(String(50), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    items_json: Mapped[str] = mapped_column(Text, nullable=False)
-    ability_order_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_community_build_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+    items = relationship(
+        "CustomBuildItem",
+        back_populates="build",
+        cascade="all, delete-orphan",
+        order_by="CustomBuildItem.display_order",
+    )
+    abilities = relationship(
+        "CustomBuildAbility",
+        back_populates="build",
+        cascade="all, delete-orphan",
+        order_by="CustomBuildAbility.display_order",
     )
