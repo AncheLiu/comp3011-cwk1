@@ -142,7 +142,7 @@ Constraints:
 
 ### `custom_builds`
 
-Stores builds created by users of the API.
+Stores top-level metadata for builds created by users of the API.
 
 Fields:
 
@@ -152,11 +152,44 @@ Fields:
 - `author_name` `VARCHAR(100) NOT NULL`
 - `playstyle_tag` `VARCHAR(50) NULL`
 - `description` `TEXT NULL`
-- `items_json` `JSONB NOT NULL`
-- `ability_order_json` `JSONB NULL`
 - `notes` `TEXT NULL`
+- `source_community_build_id` `BIGINT NULL`
 - `created_at` `TIMESTAMP NOT NULL`
 - `updated_at` `TIMESTAMP NOT NULL`
+
+### `custom_build_items`
+
+Stores ordered item entries for a custom build.
+
+Fields:
+
+- `id` `BIGSERIAL PRIMARY KEY`
+- `build_id` `BIGINT NOT NULL REFERENCES custom_builds(id)`
+- `item_id` `BIGINT NOT NULL REFERENCES items(id)`
+- `category_name` `VARCHAR(100) NULL`
+- `display_order` `INT NOT NULL`
+- `is_optional` `BOOLEAN NOT NULL DEFAULT FALSE`
+- `annotation` `TEXT NULL`
+
+Constraints:
+
+- `UNIQUE(build_id, display_order)`
+
+### `custom_build_abilities`
+
+Stores ordered ability progression entries for a custom build.
+
+Fields:
+
+- `id` `BIGSERIAL PRIMARY KEY`
+- `build_id` `BIGINT NOT NULL REFERENCES custom_builds(id)`
+- `ability_id` `BIGINT NOT NULL`
+- `display_order` `INT NOT NULL`
+- `annotation` `TEXT NULL`
+
+Constraints:
+
+- `UNIQUE(build_id, display_order)`
 
 ### `saved_reports`
 
@@ -251,6 +284,9 @@ Main relationships:
 - `matches -> match_participants`
 - `heroes -> community_builds`
 - `heroes -> custom_builds`
+- `custom_builds -> custom_build_items`
+- `custom_builds -> custom_build_abilities`
+- `items -> custom_build_items`
 - `heroes -> saved_reports`
 - `heroes -> hero_daily_stats`
 - `heroes -> hero_matchups`

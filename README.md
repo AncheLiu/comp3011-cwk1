@@ -17,6 +17,7 @@ This project aims to:
 - item listing endpoint
 - match list and match detail endpoints
 - community build list and detail endpoints
+- community build cloning into editable custom builds
 - custom build CRUD
 - saved report CRUD and result generation
 - hero meta analytics
@@ -40,6 +41,7 @@ This project aims to:
 - `GET /matches/{match_id}`
 - `GET /community-builds`
 - `GET /community-builds/{id}`
+- `POST /community-builds/{id}/clone-to-custom`
 
 ### Custom Builds
 
@@ -48,6 +50,14 @@ This project aims to:
 - `GET /custom-builds/{id}`
 - `PUT /custom-builds/{id}`
 - `DELETE /custom-builds/{id}`
+
+Custom builds now use a relational structure:
+
+- `custom_builds` stores top-level build metadata
+- `custom_build_items` stores ordered item entries
+- `custom_build_abilities` stores ordered ability progression entries
+
+This keeps the build model easier to extend for later PostgreSQL deployment and more advanced build comparison features.
 
 ### Saved Reports
 
@@ -70,7 +80,7 @@ This project aims to:
 
 - analytics filters such as region-based summaries
 - community build summary analytics
-- PostgreSQL deployment configuration
+- PostgreSQL deployment configuration and production environment setup
 
 ## Tech Stack
 

@@ -140,6 +140,43 @@ Query parameters:
 
 Returns a single community build including stored tags and build details.
 
+### `POST /community-builds/{id}/clone-to-custom` `Implemented`
+
+Creates a new editable custom build draft from an imported community build.
+
+The cloned build:
+
+- copies the hero and description
+- stores the original `hero_build_id` as `source_community_build_id`
+- extracts item rows from `details_json.mod_categories`
+- extracts ability progression from `details_json.ability_order.currency_changes`
+
+Example response:
+
+```json
+{
+  "id": 12,
+  "title": "Zieth Infernus (Custom Copy)",
+  "hero_id": 1,
+  "hero_name": "Infernus",
+  "source_community_build_id": 1013,
+  "items": [
+    {
+      "item_id": 968099481,
+      "item_name": "Toxic Bullets",
+      "category_name": "Early Game",
+      "display_order": 1
+    }
+  ],
+  "abilities": [
+    {
+      "ability_id": 1593133799,
+      "display_order": 1
+    }
+  ]
+}
+```
+
 ## CRUD Endpoints
 
 ### `POST /custom-builds` `Implemented`
@@ -155,19 +192,89 @@ Example request body:
   "author_name": "student",
   "playstyle_tag": "damage_over_time",
   "description": "Focus on sustained burn damage",
-  "items_json": [968099481, 2081037738, 2480592370],
-  "ability_order_json": [1593133799, 491391007, 3516947824],
-  "notes": "Use against squishy teams"
+  "notes": "Use against squishy teams",
+  "source_community_build_id": 1013,
+  "items": [
+    {
+      "item_id": 968099481,
+      "category_name": "Early Game",
+      "display_order": 1,
+      "is_optional": false,
+      "annotation": "Main lane pressure item"
+    },
+    {
+      "item_id": 2081037738,
+      "category_name": "Core",
+      "display_order": 2,
+      "is_optional": false,
+      "annotation": "Mid-game power spike"
+    }
+  ],
+  "abilities": [
+    {
+      "ability_id": 1593133799,
+      "display_order": 1,
+      "annotation": "First point"
+    },
+    {
+      "ability_id": 491391007,
+      "display_order": 2,
+      "annotation": "Second point"
+    }
+  ]
 }
 ```
 
 ### `GET /custom-builds` `Implemented`
 
-Returns all custom builds currently stored in the local database.
+Returns custom build summaries currently stored in the local database.
+
+Each summary includes:
+
+- build metadata
+- `hero_name`
+- `item_count`
+- `ability_count`
 
 ### `GET /custom-builds/{id}` `Implemented`
 
-Returns a single custom build.
+Returns a single custom build with expanded item and ability rows.
+
+Example response:
+
+```json
+{
+  "id": 1,
+  "title": "Afterburn Rush Build",
+  "hero_id": 1,
+  "hero_name": "Infernus",
+  "author_name": "student",
+  "playstyle_tag": "damage_over_time",
+  "description": "Focus on sustained burn damage",
+  "notes": "Use against squishy teams",
+  "source_community_build_id": 1013,
+  "items": [
+    {
+      "id": 1,
+      "item_id": 968099481,
+      "item_name": "Toxic Bullets",
+      "item_type": "weapon",
+      "category_name": "Early Game",
+      "display_order": 1,
+      "is_optional": false,
+      "annotation": "Main lane pressure item"
+    }
+  ],
+  "abilities": [
+    {
+      "id": 1,
+      "ability_id": 1593133799,
+      "display_order": 1,
+      "annotation": "First point"
+    }
+  ]
+}
+```
 
 ### `PUT /custom-builds/{id}` `Implemented`
 
