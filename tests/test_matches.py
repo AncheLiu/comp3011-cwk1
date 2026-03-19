@@ -141,6 +141,17 @@ def test_list_matches_rejects_unknown_hero_filter(client) -> None:
     assert response.status_code == 404
 
 
+def test_list_matches_supports_inclusive_date_filters(client) -> None:
+    seed_matches(client)
+
+    response = client.get("/matches?date_from=2026-03-11&date_to=2026-03-11")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["id"] == 5002
+
+
 def test_get_match_detail_returns_participants(client) -> None:
     seed_matches(client)
 

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta, UTC
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -39,10 +39,12 @@ def list_matches(
         statement = statement.where(Match.region_mode == region_mode)
 
     if date_from is not None:
-        statement = statement.where(Match.start_time >= date_from.isoformat())
+        start_of_day = datetime.combine(date_from, time.min, tzinfo=UTC)
+        statement = statement.where(Match.start_time >= start_of_day)
 
     if date_to is not None:
-        statement = statement.where(Match.start_time < date_to.replace(day=date_to.day).isoformat())
+        end_exclusive = datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=UTC)
+        statement = statement.where(Match.start_time < end_exclusive)
 
     statement = statement.distinct().order_by(Match.start_time.desc(), Match.id.desc())
     matches = list(db.scalars(statement).all())
