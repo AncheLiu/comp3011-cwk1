@@ -6,8 +6,8 @@ A data-driven web API for analysing public Deadlock game data. The project inges
 
 Formal API documentation is provided in:
 
-- [Markdown API documentation](G:\uni_course\comp3011 web services\cwk1\comp3011-cwk1\docs\api-documentation.md)
-- PDF API documentation at `docs/api-documentation.pdf` once exported for submission
+- [Markdown API documentation](docs/api-documentation.md)
+- [PDF API documentation](docs/api-documentation.pdf)
 
 Interactive OpenAPI documentation is also available through FastAPI:
 
@@ -16,10 +16,10 @@ Interactive OpenAPI documentation is also available through FastAPI:
 
 ## Submission Documents
 
-- API documentation: `docs/api-documentation.pdf`
-- Technical report: `docs/technical-report.pdf`
-- GenAI supplementary material: `docs/genai-supplementary.pdf`
-- Presentation slides: `docs/Anche Liu.pptx`
+- [API documentation](docs/api-documentation.pdf)
+- [Technical report](docs/technical-report.pdf)
+- [GenAI supplementary material](docs/genai-supplementary.pdf)
+- [Presentation slides](docs/Anche%20Liu.pptx)
 
 ## Project Goals
 
